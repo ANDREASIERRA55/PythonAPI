@@ -27,3 +27,10 @@ logs/
 *.log
 tmp/
 *.temp
+
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+.DS_Store
