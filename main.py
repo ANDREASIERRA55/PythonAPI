@@ -1,6 +1,11 @@
 from flask import Flask, request, jsonify
 import db 
+
 app = Flask(__name__)
+
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"message": "API de Inventario en ejecución"}), 200
 
 @app.route('/producto/<int:producto_id>', methods=['GET'])
 def get_producto(producto_id):

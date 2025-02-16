@@ -6,6 +6,6 @@ def get_connection():
         host="localhost",  
         user="root",  
         password="", 
-        database="inventariio" 
+        database="inventario" 
     )
     return mydb
