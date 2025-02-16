@@ -1,39 +1,52 @@
 from flask import Flask, request, jsonify
-
+import db 
 app = Flask(__name__)
 
-@app.route('/')
-def root():
-    return 'Hola'
+@app.route('/producto/<int:producto_id>', methods=['GET'])
+def get_producto(producto_id):
+    mydb = db.get_connection()
+    mycursor = mydb.cursor()
+    
+    sql = "SELECT p.id, p.nombre, p.precio, c.nombre AS categoria FROM productos p LEFT JOIN categorias c ON p.categoria_id = c.id WHERE p.id = %s"
+    val = (producto_id,)
+    mycursor.execute(sql, val)
+    result = mycursor.fetchone()
+    
+    mydb.close()
+    
+    if result:
+        producto = {
+            "id": result[0],
+            "nombre": result[1],
+            "precio": float(result[2]),
+            "categoria": result[3] if result[3] else "Sin categoría"
+        }
+        return jsonify(producto), 200
+    else:
+        return jsonify({"message": "Producto no encontrado"}), 404
 
-@app.route('/user/<int:user_id>')  # Especifica <int:user_id> para que sea un entero
-def get_user(user_id):
-    user = {"id": user_id, "name": "Andrea", "telefono": "1234567890"}
-    query = request.args.get('query')  # Obtiene el parámetro 'query' de la URL
-    if query:
-        user["query"] = query
-    return jsonify(user), 200
-
-@app.route('/user', methods=['POST'])
-def create_user():
-    '''user = request.get_json
-    return jsonify(user), 201'''
-
-    try:
-        user_data = request.get_json()  # Obtener los datos JSON de la solicitud
-        # Aquí deberías validar y procesar user_data, por ejemplo:
-        if not user_data or 'username' not in user_data or 'email' not in user_data:
-            return jsonify({'error': 'Faltan datos en la solicitud'}), 400
-
-        # Crear el usuario en la base de datos (ejemplo)
-        # ... (código para interactuar con la base de datos) ...
-        # Supongamos que se crea el usuario correctamente y obtenemos un diccionario 'user' con los datos.
-
-        return jsonify(user_data), 201  # Devolver los datos del usuario creado y el código 201 (Created)
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500  # Capturar errores y devolver un mensaje de error genérico (Internal Server Error)
-
+@app.route('/inventario/<int:producto_id>', methods=['GET'])
+def get_inventario(producto_id):
+    mydb = db.get_connection()
+    mycursor = mydb.cursor()
+    
+    sql = "SELECT i.id, p.nombre, i.cantidad, i.fecha_actualizacion FROM inventario i JOIN productos p ON i.producto_id = p.id WHERE i.producto_id = %s"
+    val = (producto_id,)
+    mycursor.execute(sql, val)
+    result = mycursor.fetchone()
+    
+    mydb.close()
+    
+    if result:
+        inventario = {
+            "id": result[0],
+            "producto": result[1],
+            "cantidad": result[2],
+            "fecha_actualizacion": result[3].strftime('%Y-%m-%d %H:%M:%S')
+        }
+        return jsonify(inventario), 200
+    else:
+        return jsonify({"message": "Inventario no encontrado"}), 404
 
 if __name__ == '__main__':
     app.run(debug=True)
