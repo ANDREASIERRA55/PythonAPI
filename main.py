@@ -110,5 +110,39 @@ def crear_producto():
             mycursor.close()
             mydb.close()
 
+
+#Ruta para las solicitudes GET a /producto.
+@app.route('/producto', methods=['GET'])
+def get_productos():
+    mydb = db.get_connection()
+    mycursor = mydb.cursor()
+
+    try:
+        sql = "SELECT p.id, p.nombre, p.precio, c.nombre AS categoria FROM productos p LEFT JOIN categorias c ON p.categoria_id = c.id"
+        mycursor.execute(sql)
+        productos = mycursor.fetchall()
+
+        lista_productos = []
+        for producto in productos:
+            lista_productos.append({
+                "id": producto[0],
+                "nombre": producto[1],
+                "precio": float(producto[2]),
+                "categoria": producto[3] if producto[3] else "Sin categoría"
+            })
+
+        return jsonify(lista_productos), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+
+    finally:
+        if mydb.is_connected():
+            mycursor.close()
+            mydb.close()
+            
+            
+            
+            
 if __name__ == '__main__':
     app.run(debug=True)
