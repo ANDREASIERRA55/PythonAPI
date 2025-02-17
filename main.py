@@ -142,7 +142,84 @@ def get_productos():
             mydb.close()
             
             
-            
-            
+#Ruta para actualizar un producto
+
+@app.route('/producto/<int:producto_id>', methods=['PUT'])
+def actualizar_producto(producto_id):
+    mydb = db.get_connection()
+    mycursor = mydb.cursor()
+
+    try:
+        data = request.get_json()
+        nombre = data.get('nombre')
+        precio = data.get('precio')
+        categoria_nombre = data.get('categoria')
+
+        if not nombre or not precio or not categoria_nombre: 
+            return jsonify({"error": "Faltan datos"}), 400
+
+        try:
+            precio = float(precio)  
+        except ValueError:
+            return jsonify({"error": "Precio inválido"}), 400
+
+        # Busca o crea la categoría (si es necesario)
+        sql_categoria = "SELECT id FROM categorias WHERE nombre = %s"
+        val_categoria = (categoria_nombre,)
+        mycursor.execute(sql_categoria, val_categoria)
+        result_categoria = mycursor.fetchone()
+
+        if result_categoria:
+            categoria_id = result_categoria[0]
+        else:
+            sql_insert_categoria = "INSERT INTO categorias (nombre) VALUES (%s)"
+            val_insert_categoria = (categoria_nombre,)
+            mycursor.execute(sql_insert_categoria, val_insert_categoria)
+            mydb.commit()
+            categoria_id = mycursor.lastrowid
+
+        sql = "UPDATE productos SET nombre = %s, precio = %s, categoria_id = %s WHERE id = %s"
+        val = (nombre, precio, categoria_id, producto_id)
+        mycursor.execute(sql, val)
+        mydb.commit()
+
+        return jsonify({"message": "Producto actualizado"}), 200
+
+    except mysql.connector.Error as err:
+        mydb.rollback()  # Importante para la integridad de la base de datos
+        return jsonify({"error": str(err)}), 500
+
+    finally:
+        if mydb.is_connected():
+            mycursor.close()
+            mydb.close()
+
+#Ruta para eliminar un producto
+
+@app.route('/producto/<int:producto_id>', methods=['DELETE'])
+def eliminar_producto(producto_id):
+    mydb = db.get_connection()
+    mycursor = mydb.cursor()
+
+    try:
+        mydb = db.get_connection() 
+        mycursor = mydb.cursor() 
+        
+        sql = "DELETE FROM productos WHERE id = %s"
+        val = (producto_id,)
+        mycursor.execute(sql, val)
+        mydb.commit()
+
+        return jsonify({"message": "Producto eliminado"}), 204  # 204 No Content es el código correcto para DELETE
+
+    except mysql.connector.Error as err:
+        mydb.rollback()
+        return jsonify({"error": str(err)}), 500
+
+    finally:
+        if mydb.is_connected():
+            mycursor.close()
+            mydb.close()
+
 if __name__ == '__main__':
     app.run(debug=True)
